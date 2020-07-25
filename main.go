@@ -44,11 +44,11 @@ problemloop:
 		}()
 
 		select {
-		//Timer runs out
+		//Either timer runs out...
 		case <-timer.C:
 			fmt.Println()
 			break problemloop
-		//Answer is submitted
+		//... Or answer is submitted
 		case answer := <-answerCh:
 			if answer == p.a {
 				correct++
@@ -71,11 +71,13 @@ func parseLines(lines [][]string) []problem {
 	return ret
 }
 
+//Struct problem makes quiz data portable
 type problem struct {
 	q string
 	a string
 }
 
+//Game Over
 func exit(msg string) {
 	fmt.Println(msg)
 	os.Exit(1)
