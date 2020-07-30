@@ -12,23 +12,23 @@ import (
 type status struct {
 	state    string
 	fileName *string
-	errr     error
-	question string
-	answer   string
-	correct  uint
-	problems uint
+	fault    error
+	problem  string
+	solution string
+	score    uint
+	lines    uint
 }
 
 func main() {
 
-	curr := status{}
-	curr.fileName = flag.String("csv", "problems.csv", "CSV file in 'question, answer' format")
+	my := status{}
+	my.fileName = flag.String("csv", "problems.csv", "CSV file in 'problem, solution' format")
 	timeLimit := flag.Int("limit", 30, "Time limit for the quiz in seconds")
 	flag.Parse()
 
-	file, err := os.Open(*curr.fileName)
-	curr.state, curr.errr = "open", err
-	handleError(&curr)
+	file, err := os.Open(*my.fileName)
+	my.state, my.fault = "open", err
+	handleError(&my)
 
 	r := csv.NewReader(file)
 	r.ReuseRecord, r.TrimLeadingSpace = true, true
@@ -36,43 +36,43 @@ func main() {
 
 	for {
 		line, err := r.Read()
-		curr.state, curr.errr = "read", err
-		handleError(&curr)
-		curr.problems++
+		my.state, my.fault = "read", err
+		handleError(&my)
+		my.lines++
 
-		curr.question, curr.answer = line[0], line[1]
-		fmt.Printf("Problem #%d: %s = ", curr.problems, curr.question)
+		my.problem, my.solution = line[0], line[1]
+		fmt.Printf("Problem #%d: %s = ", my.lines, my.problem)
 		answerCh := make(chan string)
 
 		go func() {
-			var submission string
-			fmt.Scanf("%s\n", &submission)
-			answerCh <- submission
+			var answer string
+			fmt.Scanf("%s\n", &answer)
+			answerCh <- answer
 		}()
 
 		select {
 		case <-timer.C:
 			exit(fmt.Sprintf("\nTime expired"))
-		case submission := <-answerCh:
-			if curr.answer == submission {
-				curr.correct++
+		case answer := <-answerCh:
+			if my.solution == answer {
+				my.score++
 			}
 		}
 	}
 }
 
-func handleError(curr *status) {
-	switch curr.state {
+func handleError(my *status) {
+	switch my.state {
 	case "open":
-		if curr.errr != nil {
-			exit(fmt.Sprintf("Failed to open %s", *curr.fileName))
+		if my.fault != nil {
+			exit(fmt.Sprintf("Failed to open %s", *my.fileName))
 		}
 	case "read":
-		if curr.errr == io.EOF {
-			exit(fmt.Sprintf("You scored %d out of %d", curr.correct, curr.problems))
+		if my.fault == io.EOF {
+			exit(fmt.Sprintf("You scored %d out of %d", my.score, my.lines))
 		}
-		if curr.errr != nil {
-			exit(fmt.Sprintf("Failed to read CSV %v", curr.errr))
+		if my.fault != nil {
+			exit(fmt.Sprintf("Failed to read CSV %v", my.fault))
 		}
 	}
 }
